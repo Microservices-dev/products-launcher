@@ -1,7 +1,6 @@
-version: '3'
+version: "3.1"
 
 services:
-
   nats-server:
     image: nats:latest
     ports:
@@ -18,69 +17,85 @@ services:
       - PORT=3000
       - NATS_SERVERS=${NATS_SERVERS}
 
-  products-ms:
-    build: ./products-ms
-    ports:
-      - "3001:3001"
-    volumes:
-      - ./products-ms/src:/usr/src/app/src
-    command: npm run start:dev
-    environment:
-      - PORT=3001
-      - DATABASE_URL=file:./dev.db
-      - NATS_SERVERS=${NATS_SERVERS}
-  orders-db:
-    container_name: order_database
-    image: postgres:16.2
-    restart: always
-    volumes:
-      - ./orders-ms/postgres:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ordersdb
+  #   products-ms:
+  #     build: ./products-ms
+  #     ports:
+  #       - "3001:3001"
+  #     volumes:
+  #       - ./products-ms/src:/usr/src/app/src
+  #     command: npm run start:dev
+  #     environment:
+  #       - PORT=3001
+  #       - DATABASE_URL=file:./dev.db
+  #       - NATS_SERVERS=${NATS_SERVERS}
+  #   orders-db:
+  #     container_name: order_database
+  #     image: postgres:16.2
+  #     restart: always
+  #     volumes:
+  #       - ./orders-ms/postgres:/var/lib/postgresql/data
+  #     ports:
+  #       - 5432:5432
+  #     environment:
+  #       POSTGRES_USER: postgres
+  #       POSTGRES_PASSWORD: postgres
+  #       POSTGRES_DB: ordersdb
 
-  orders-ms:
-    depends_on:
-      - orders-db
-    build: ./orders-ms
-    ports:
-      - "3002:3002"
-    volumes:
-      - ./orders-ms/src:/usr/src/app/src
-    command: npm run start:dev
-    environment:
-      - PORT=3002
-      - DATABASE_URL=postgresql://postgres:postgres@orders-db:5432/ordersdb
-      - NATS_SERVERS=${NATS_SERVERS}
+  #   orders-ms:
+  #     depends_on:
+  #       - orders-db
+  #     build: ./orders-ms
+  #     ports:
+  #       - "3002:3002"
+  #     volumes:
+  #       - ./orders-ms/src:/usr/src/app/src
+  #     command: npm run start:dev
+  #     environment:
+  #       - PORT=3002
+  #       - DATABASE_URL=postgresql://postgres:postgres@orders-db:5432/ordersdb
+  #       - NATS_SERVERS=${NATS_SERVERS}
 
-# ------------------------------
-#  PAYMENTS MICROSERVICE
-# ------------------------------
-  payments-ms:
-    depends_on:
-      - stripe-cli
-    build: ./payments-ms
-    ports:
-      - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
-    volumes:
-      - ./payments-ms/src:/usr/src/app/src
-    command: npm run start:dev
-    environment:
-      - PORT=${PAYMENTS_MS_PORT}
-      - STRIPE_SECRET=${PAYMENTS_MS_STRIPE_SECRET}
-      - STRIPE_DEVICE_NAME=${PAYMENTS_MS_STRIPE_DEVICE_NAME}
-      - STRIPE_URL_SECCESS=${PAYMENTS_MS_STRIPE_URL_SECCESS}
-      - STRIPE_URL_CANCEL=${PAYMENTS_MS_STRIPE_URL_CANCEL}
-      - STRIPE_ENDPOINT_SECRET=${PAYMENTS_MS_STRIPE_ENDPOINT_SECRET}
-      - NATS_SERVERS=${NATS_SERVERS}
+  # # ------------------------------
+  # #  PAYMENTS MICROSERVICE
+  # # ------------------------------
+  #   payments-ms:
+  #     depends_on:
+  #       - stripe-cli
+  #     build: ./payments-ms
+  #     ports:
+  #       - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
+  #     volumes:
+  #       - ./payments-ms/src:/usr/src/app/src
+  #     command: npm run start:dev
+  #     environment:
+  #       - PORT=${PAYMENTS_MS_PORT}
+  #       - STRIPE_SECRET=${PAYMENTS_MS_STRIPE_SECRET}
+  #       - STRIPE_DEVICE_NAME=${PAYMENTS_MS_STRIPE_DEVICE_NAME}
+  #       - STRIPE_URL_SECCESS=${PAYMENTS_MS_STRIPE_URL_SECCESS}
+  #       - STRIPE_URL_CANCEL=${PAYMENTS_MS_STRIPE_URL_CANCEL}
+  #       - STRIPE_ENDPOINT_SECRET=${PAYMENTS_MS_STRIPE_ENDPOINT_SECRET}
+  #       - NATS_SERVERS=${NATS_SERVERS}
 
-# ------------------------------
-#  STRIPE CLI
-# ------------------------------
-  stripe-cli:
-    image: stripe/stripe-cli
-    container_name: stripe-cli
-    command: 'listen --api-key ${PAYMENTS_MS_STRIPE_SECRET} --device-name ${PAYMENTS_MS_STRIPE_DEVICE_NAME} --forward-to http://payments-ms:${PAYMENTS_MS_PORT}/payments/hook/'
+  # # ------------------------------
+  # #  STRIPE CLI
+  # # ------------------------------
+  #   stripe-cli:
+  #     image: stripe/stripe-cli
+  #     container_name: stripe-cli
+  #     command: 'listen --api-key ${PAYMENTS_MS_STRIPE_SECRET} --device-name ${PAYMENTS_MS_STRIPE_DEVICE_NAME} --forward-to http://payments-ms:${PAYMENTS_MS_PORT}/payments/hook/'
+
+  # ------------------------------
+  #  AUTH MICROSERVICE
+  # ------------------------------
+  auth-ms:
+    build: ./auth-ms
+    command: npm run start:dev
+    ports:
+      - ${AUTH_MS_PORT}:3005
+    volumes:
+      - ./auth-ms/src:/usr/src/app/src
+    environment:
+      - PORT=${AUTH_MS_PORT}
+      - NATS_SERVERS=${NATS_SERVERS}
+      - DATABASE_URL=${AUTH_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
