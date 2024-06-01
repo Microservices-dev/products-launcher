@@ -3,64 +3,44 @@ version: "3.8"
 services:
   nats-server:
     image: nats:latest
-    ports:
-      - "8222:8222"
   client-gateway:
-    build: ./client-gateway
+    image: client-gateway-prod
+    build:
+      context: ./client-gateway
+      dockerfile: Dockerfile.prod
     ports:
-      - ${CLIENT_GATEWAY_PORT}:3000
-    volumes:
-      - ./client-gateway/src:/usr/src/app/src
-    command: npm run start:dev
+      - ${CLIENT_GATEWAY_PORT}:${CLIENT_GATEWAY_PORT}
     environment:
-      - PORT=3000
+      - PORT=${CLIENT_GATEWAY_PORT}
       - NATS_SERVERS=${NATS_SERVERS}
   products-ms:
-    build: ./products-ms
-    ports:
-      - "3001:3001"
-    volumes:
-      - ./products-ms/src:/usr/src/app/src
-    command: npm run start:dev
+    image: products-ms-prod
+    build:
+      context: ./products-ms
+      dockerfile: Dockerfile.prod
     environment:
-      - PORT=3001
+      - PORT=3000
       - DATABASE_URL=file:./dev.db
       - NATS_SERVERS=${NATS_SERVERS}
-  orders-db:
-    container_name: order_database
-    image: postgres:16.2
-    restart: always
-    volumes:
-      - ./orders-ms/postgres:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ordersdb
   orders-ms:
-    depends_on:
-      - orders-db
-    build: ./orders-ms
-    ports:
-      - "3002:3002"
-    volumes:
-      - ./orders-ms/src:/usr/src/app/src
-    command: npm run start:dev
+    image: orders-ms-prod
+    build:
+      context: ./orders-ms
+      dockerfile: Dockerfile.prod
+      args:
+        - ORDERS_DB_URL=${ORDERS_DB_URL}
     environment:
-      - PORT=3002
-      - DATABASE_URL=postgresql://postgres:postgres@orders-db:5432/ordersdb
+      - PORT=3000
+      - DATABASE_URL=${ORDERS_DB_URL}
       - NATS_SERVERS=${NATS_SERVERS}
   #------------------------------
   #  AUTH MICROSERVICE
   # ------------------------------
   auth-ms:
-    build: ./auth-ms
-    command: npm run start:dev
-    ports:
-      - ${AUTH_MS_PORT}:3005
-    volumes:
-      - ./auth-ms/src:/usr/src/app/src
+    image: auth-ms-prod
+    build:
+      context: ./auth-ms
+      dockerfile: Dockerfile.prod
     environment:
       - PORT=${AUTH_MS_PORT}
       - NATS_SERVERS=${NATS_SERVERS}
@@ -72,12 +52,11 @@ services:
   payments-ms:
     depends_on:
       - stripe-cli
-    build: ./payments-ms
+    build:
+      context: ./payments-ms
+      dockerfile: Dockerfile.prod
     ports:
       - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
-    volumes:
-      - ./payments-ms/src:/usr/src/app/src
-    command: npm run start:dev
     environment:
       - PORT=${PAYMENTS_MS_PORT}
       - STRIPE_SECRET=${PAYMENTS_MS_STRIPE_SECRET}
