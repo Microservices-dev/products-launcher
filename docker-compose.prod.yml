@@ -4,7 +4,7 @@ services:
   nats-server:
     image: nats:latest
   client-gateway:
-    image: client-gateway-prod
+    image: us-west1-docker.pkg.dev/microservices-devtallers/image-registry/client-gateway
     build:
       context: ./client-gateway
       dockerfile: Dockerfile.prod
@@ -14,7 +14,7 @@ services:
       - PORT=${CLIENT_GATEWAY_PORT}
       - NATS_SERVERS=${NATS_SERVERS}
   products-ms:
-    image: products-ms-prod
+    image: us-west1-docker.pkg.dev/microservices-devtallers/image-registry/products-ms
     build:
       context: ./products-ms
       dockerfile: Dockerfile.prod
@@ -23,7 +23,7 @@ services:
       - DATABASE_URL=file:./dev.db
       - NATS_SERVERS=${NATS_SERVERS}
   orders-ms:
-    image: orders-ms-prod
+    image: us-west1-docker.pkg.dev/microservices-devtallers/image-registry/orders-ms
     build:
       context: ./orders-ms
       dockerfile: Dockerfile.prod
@@ -37,7 +37,7 @@ services:
   #  AUTH MICROSERVICE
   # ------------------------------
   auth-ms:
-    image: auth-ms-prod
+    image: us-west1-docker.pkg.dev/microservices-devtallers/image-registry/auth-ms
     build:
       context: ./auth-ms
       dockerfile: Dockerfile.prod
@@ -50,6 +50,7 @@ services:
   #  PAYMENTS MICROSERVICE
   # ------------------------------
   payments-ms:
+    image: us-west1-docker.pkg.dev/microservices-devtallers/image-registry/payments-ms
     depends_on:
       - stripe-cli
     build:
